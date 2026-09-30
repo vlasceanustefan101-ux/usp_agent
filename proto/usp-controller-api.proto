@@ -1,0 +1,37 @@
+// Northbound API of the USP Controller.
+// Tasks are published as JSON (protobuf JSON mapping) to the controller's
+// task destination (default /queue/usp.controller.tasks). Results are sent
+// to the "reply-to" destination of the task, or to the results destination.
+syntax = "proto3";
+
+package usp_controller;
+
+import "usp-msg-1-4.proto";
+
+message Task {
+  string task_id = 1;          // echoed back in TaskResult
+  string endpoint_id = 2;      // target Agent, e.g. "os::XXXXXX-SERIAL"
+  usp.Request request = 3;     // any USP request (get, set, add, delete, operate, ...)
+  uint32 timeout_ms = 4;       // 0 = controller default
+  bool list_agents = 5;        // if true, ignore request and return the agent list
+}
+
+message AgentInfo {
+  string endpoint_id = 1;
+  string destination = 2;      // STOMP destination used to reach the Agent
+  string usp_version = 3;
+  bool online = 4;
+  string last_seen = 5;        // ISO-8601 UTC
+  string oui = 6;
+  string product_class = 7;
+  string serial_number = 8;
+}
+
+message TaskResult {
+  string task_id = 1;
+  string endpoint_id = 2;
+  string status = 3;           // "ok", "usp_error", "timeout", "error"
+  string error = 4;
+  usp.Msg response = 5;        // full USP response (or USP Error) from the Agent
+  repeated AgentInfo agents = 6;
+}

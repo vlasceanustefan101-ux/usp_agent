@@ -1,0 +1,22 @@
+{
+  "rabbit_version": "4.1.0",
+  "users": [
+    { "name": "admin", "password_hash": "SO34MsEpaAB5q81KPHFzGBdw/u39vCF/g3bif8jC9B6ASw+J",
+      "hashing_algorithm": "rabbit_password_hashing_sha256", "tags": ["administrator"] },
+    { "name": "usp-controller", "password_hash": "6xrQgI7Y9lfQeg4cuWaBGtdNgclDtRKArtgiSdiKgd5D+Wrk",
+      "hashing_algorithm": "rabbit_password_hashing_sha256", "tags": [] },
+    { "name": "usp-agent", "password_hash": "vkiYsL+wrEN6oo9uOoceNYAYEK3pHZiaCaTagpQJ01YtQ84d",
+      "hashing_algorithm": "rabbit_password_hashing_sha256", "tags": [] }
+  ],
+  "vhosts": [ { "name": "/" } ],
+  "permissions": [
+    { "user": "admin", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "usp-controller", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "usp-agent", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
+  ],
+  "queues": [
+    { "name": "usp.controller", "vhost": "/", "durable": true, "auto_delete": false, "arguments": {} },
+    { "name": "usp.controller.tasks", "vhost": "/", "durable": true, "auto_delete": false, "arguments": {} },
+    { "name": "usp.controller.results", "vhost": "/", "durable": true, "auto_delete": false, "arguments": {} }
+  ]
+}

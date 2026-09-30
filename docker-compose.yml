@@ -1,0 +1,66 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: usp-rabbitmq
+    hostname: usp-rabbitmq
+    ports:
+      - "61613:61613"   # STOMP  (router + controller)
+      - "1883:1883"     # MQTT   (only if the router has no STOMP)
+      - "5672:5672"     # AMQP   (backend / tools)
+      - "15672:15672"   # Management UI  http://localhost:15672  (admin / admin-secret)
+    volumes:
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 24
+
+  controller:
+    build: .
+    image: usp-controller:latest
+    container_name: usp-controller
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      USP_STOMP_HOST: rabbitmq
+      USP_STOMP_USERNAME: usp-controller
+      USP_STOMP_PASSWORD: controller-secret
+      USP_LOG_LEVEL: info
+    # Interactive console: docker attach usp-controller  (detach with Ctrl-P Ctrl-Q)
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Simulated agent for testing without the router:
+  #   docker compose --profile sim up -d
+  fake-agent:
+    image: usp-controller:latest
+    profiles: ["sim"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      controller:
+        condition: service_started
+    entrypoint: ["usp-fake-agent"]
+    environment:
+      USP_STOMP_HOST: rabbitmq
+      USP_STOMP_USERNAME: usp-agent
+      USP_STOMP_PASSWORD: agent-secret
+
+  # Broadband Forum reference agent (OB-USP-Agent), built from source:
+  #   docker compose --profile obuspa up -d --build
+  obuspa:
+    build: ./docker/obuspa
+    image: obuspa:local
+    profiles: ["obuspa"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  rabbitmq-data:
